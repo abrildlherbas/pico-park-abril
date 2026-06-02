@@ -5,6 +5,7 @@ new Elysia()
   .ws("/ws", {
     message(ws, message) {
       ws.send(message);
+      console.log("Mensaje recibido de ", ws.id, ":", message);
     },
   })
   .listen({

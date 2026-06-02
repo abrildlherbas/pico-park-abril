@@ -1,40 +1,23 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-} from "react-native";
-
-import { io } from "socket.io-client";
-import { useKeepAwake } from "expo-keep-awake";
+import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 
 export default function HomeScreen() {
-  useKeepAwake();
-
   const [ip, setIp] = useState("");
   const [connected, setConnected] = useState(false);
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
-  const connect = () => {
-    const newSocket = io(`http://${ip}`);
+  const conectar = () => {
+    const newSocket = new WebSocket(`ws://${ip}:3000/ws`);
 
-    newSocket.on("connect", () => {
+    newSocket.onopen = () => {
       setConnected(true);
-      console.log("Conectado");
-    });
-
-    newSocket.on("disconnect", () => {
-      setConnected(false);
-      console.log("Desconectado");
-    });
+    };
 
     setSocket(newSocket);
   };
 
-  const sendInput = (data: any) => {
-    socket?.emit("input", data);
+  const enviarMensaje = (mensaje: string) => {
+    socket?.send(mensaje);
   };
 
   return (
@@ -48,43 +31,19 @@ export default function HomeScreen() {
         onChangeText={setIp}
       />
 
-      <Pressable
-        style={styles.connectButton}
-        onPress={connect}
-      >
-        <Text style={styles.whiteText}>
-          Conectar
-        </Text>
+      <Pressable style={styles.connectButton} onPress={conectar}>
+        <Text style={styles.whiteText}>Conectar</Text>
       </Pressable>
 
-      <View
-        style={[
-          styles.led,
-          {
-            backgroundColor:
-              connected ? "green" : "red",
-          },
-        ]}
-      />
-
       <Text style={{ marginBottom: 20 }}>
-        {connected
-          ? "🟢 Conectado"
-          : "🔴 Desconectado"}
+        {connected ? "🟢 Conectado" : "🔴 Desconectado"}
       </Text>
 
       <View style={styles.gamepad}>
-
         <View style={styles.dpad}>
-
           <Pressable
             style={styles.button}
-            onPressIn={() =>
-              sendInput({ jump: true })
-            }
-            onPressOut={() =>
-              sendInput({ jump: false })
-            }
+            onPress={() => enviarMensaje("Entrar")}
           >
             <Text style={styles.buttonText}>↑</Text>
           </Pressable>
@@ -92,43 +51,26 @@ export default function HomeScreen() {
           <View style={styles.row}>
             <Pressable
               style={styles.button}
-              onPressIn={() =>
-                sendInput({ left: true })
-              }
-              onPressOut={() =>
-                sendInput({ left: false })
-              }
+              onPress={() => enviarMensaje("izquierda")}
             >
               <Text style={styles.buttonText}>←</Text>
             </Pressable>
 
             <Pressable
               style={styles.button}
-              onPressIn={() =>
-                sendInput({ right: true })
-              }
-              onPressOut={() =>
-                sendInput({ right: false })
-              }
+              onPress={() => enviarMensaje("derecha")}
             >
               <Text style={styles.buttonText}>→</Text>
             </Pressable>
           </View>
-
         </View>
 
         <Pressable
           style={styles.jumpButton}
-          onPressIn={() =>
-            sendInput({ jump: true })
-          }
-          onPressOut={() =>
-            sendInput({ jump: false })
-          }
+          onPress={() => enviarMensaje("saltar")}
         >
           <Text style={styles.jumpText}>A</Text>
         </Pressable>
-
       </View>
     </View>
   );
