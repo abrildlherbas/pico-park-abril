@@ -1,24 +1,41 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
-
 <Layout>
-	<p>10.56.2.37:3000/ws</p>
-	<canvas juego-canvas ></canvas>
+  <canvas id="juego-canvas" width="800" height="450" style="background:#87ceeb; display:block; margin:auto;"></canvas>
 </Layout>
 <script>
+  const canvas = document.getElementById('juego-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  const socket = new WebSocket('ws://10.56.2.37:3000/ws?role=host');
+  let lastState: any = null;
 
-	// Establish a WebSocket connection
-const socket = new WebSocket('ws://10.56.2.37:3000/ws');
+  socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'state') lastState = data;
+  });
 
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#654321';
+    ctx.fillRect(0, 400, canvas.width, 50);
 
-// Listen for messages from the server
-socket.addEventListener('message', (event) => {
-    console.log('Message from server:', event.data);
-});
-
+    if (lastState) {
+      if (!lastState.key.taken) {
+        ctx.fillStyle = 'gold';
+        ctx.fillRect(lastState.key.x - 10, lastState.key.y - 10, 20, 20);
+      }
+      for (const p of lastState.players) {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 15, p.y - 30, 30, 30);
+      }
+      if (lastState.won) {
+        ctx.fillStyle = 'black';
+        ctx.font = '40px sans-serif';
+        ctx.fillText('¡NIVEL COMPLETADO!', 150, 200);
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
 </script>
